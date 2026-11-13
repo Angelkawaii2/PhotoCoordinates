@@ -1,0 +1,6 @@
+.DS_Store
+PhotoCoordinates.app/
+.build/
+DerivedData/
+*.xcuserstate
+*.log

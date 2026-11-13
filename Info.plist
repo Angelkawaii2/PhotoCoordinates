@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>local.PhotoCoordinates</string>
+<key>CFBundleIconFile</key><string>AppIcon</string>
+<key>CFBundleName</key><string>PhotoCoordinates</string>
+<key>CFBundleExecutable</key><string>PhotoCoordinates</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>LSMinimumSystemVersion</key><string>14.0</string>
+<key>NSPhotoLibraryUsageDescription</key><string>读取照片、相册和拍摄信息，并将您指定的坐标写入照片图库。</string>
+</dict></plist>
