@@ -33,6 +33,12 @@ struct WebPhotoMap: NSViewRepresentable {
   view.configuration.userContentController.removeScriptMessageHandler(forName: "position")
   view.stopLoading()
  }
+ static func jsString(_ value: String) -> String {
+  let data = try! JSONSerialization.data(withJSONObject: [value], options: [.fragmentsAllowed])
+  let json = String(decoding: data, as: UTF8.self)
+  return String(json.dropFirst().dropLast()).replacingOccurrences(of: "</", with: "<\\/")
+ }
+ static func htmlEscape(_ value: String) -> String { value.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;") }
  var html: String {
   let key = apiKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
   let engine: String
@@ -57,13 +63,13 @@ struct WebPhotoMap: NSViewRepresentable {
    map.addListener('dblclick',e=>{if(window.canEdit){place(e.latLng.lat(),e.latLng.lng(),true);send(e.latLng.lat(),e.latLng.lng())}});ready();};
    function place(lat,lng,editable){if(pin)pin.setMap(null);pin=new google.maps.Marker({position:{lat,lng},map,draggable:editable});pin.addListener('dragend',e=>send(e.latLng.lat(),e.latLng.lng()));}
    window.applyPosition=(lat,lng,editable)=>{window.canEdit=editable;if(lat===null){if(pin)pin.setMap(null);pin=null;return;}place(lat,lng,editable);map.setCenter({lat,lng});map.setZoom(16);};
-   window.gm_authFailure=()=>{document.getElementById('status').innerText='Google 地图授权失败，请检查 API Key、API 启用状态与限制。'};
+   window.gm_authFailure=()=>{document.getElementById('status').innerText=\(Self.jsString(L("Google 地图授权失败，请检查 API Key、API 启用状态与限制。")))};
    </script>
    <script async src="https://maps.googleapis.com/maps/api/js?key=\(key)&callback=initMap"></script>
    """
   }
   return """
-  <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#map{height:100%;margin:0}#status{position:absolute;top:8px;left:8px;z-index:1000;background:white;color:#333;padding:6px;font:13px sans-serif}</style></head><body><div id="map"></div><div id="status">正在加载地图；若长时间空白，请检查网络。</div><script>
+  <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#map{height:100%;margin:0}#status{position:absolute;top:8px;left:8px;z-index:1000;background:white;color:#333;padding:6px;font:13px sans-serif}</style></head><body><div id="map"></div><div id="status">\(Self.htmlEscape(L("正在加载地图；若长时间空白，请检查网络。")))</div><script>
   function send(lat,lon){window.webkit.messageHandlers.position.postMessage({lat,lon});}
   function ready(){document.getElementById('status').style.display='none';window.webkit.messageHandlers.position.postMessage({ready:true});}
   </script>\(engine)</body></html>

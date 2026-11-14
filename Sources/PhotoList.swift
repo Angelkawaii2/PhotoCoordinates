@@ -48,10 +48,10 @@ struct PhotoList: NSViewRepresentable {
     table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
    }
    let menu = NSMenu()
-   let copy = NSMenuItem(title: "复制此照片坐标", action: #selector(copyCoordinate(_:)), keyEquivalent: "")
+   let copy = NSMenuItem(title: L("复制此照片坐标"), action: #selector(copyCoordinate(_:)), keyEquivalent: "")
    copy.target = self; copy.representedObject = asset; copy.isEnabled = asset.location != nil
    menu.addItem(copy)
-   let paste = NSMenuItem(title: "粘贴坐标到所选照片（\(library.selection.count) 张）", action: #selector(pasteCoordinates(_:)), keyEquivalent: "")
+   let paste = NSMenuItem(title: L("粘贴坐标到所选照片（ZZARG0ZZ 张）", String(library.selection.count)), action: #selector(pasteCoordinates(_:)), keyEquivalent: "")
    paste.target = self
    paste.isEnabled = !library.busy && !library.readOnly && !library.selection.isEmpty && NSPasteboard.general.string(forType: .string).flatMap(CoordinateText.parse) != nil
    menu.addItem(paste)
@@ -72,7 +72,7 @@ struct PhotoList: NSViewRepresentable {
     let id = NSUserInterfaceItemIdentifier("cell")
     let cell = tableView.makeView(withIdentifier: id, owner: nil) as? PhotoCell ?? PhotoCell()
     cell.identifier = id
-    cell.configure(asset, title: asset.creationDate.map { formatter.string(from: $0) } ?? "未知时间")
+    cell.configure(asset, title: asset.creationDate.map { formatter.string(from: $0) } ?? L("未知时间"))
     return cell
    }
   }
@@ -131,33 +131,34 @@ final class PhotoCell: NSTableCellView {
  }
  required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
  func configure(_ asset: PHAsset, title: String) {
-  label.stringValue = "拍摄：" + title
+  label.stringValue = L("拍摄：") + title
   label.toolTip = label.stringValue
   let key = asset.localIdentifier as NSString
   let name: String
   if let cached = Self.filenameCache.object(forKey: key) { name = cached as String }
   else {
    let resources = PHAssetResource.assetResources(for: asset)
-   name = (resources.first { $0.type == .photo } ?? resources.first { $0.type == .fullSizePhoto } ?? resources.first)?.originalFilename ?? "未知文件名"
+   name = (resources.first { $0.type == .photo } ?? resources.first { $0.type == .fullSizePhoto } ?? resources.first)?.originalFilename ?? L("未知文件名")
    Self.filenameCache.countLimit = 2000
    Self.filenameCache.setObject(name as NSString, forKey: key)
   }
   filename.stringValue = name; filename.toolTip = name
   let hasGPS = asset.location != nil
-  gpsTag.image = NSImage(systemSymbolName: hasGPS ? "globe" : "mappin", accessibilityDescription: hasGPS ? "有 GPS" : "无 GPS")
+  gpsTag.image = NSImage(systemSymbolName: hasGPS ? "globe" : "mappin", accessibilityDescription: hasGPS ? L("有 GPS") : L("无 GPS"))
   gpsTag.contentTintColor = hasGPS ? .systemGreen : .systemRed
-  gpsTag.toolTip = hasGPS ? "有 GPS" : "无 GPS"
+  gpsTag.toolTip = hasGPS ? L("有 GPS") : L("无 GPS")
   guard assetID != asset.localIdentifier else { return }
   cancel(); assetID = asset.localIdentifier; thumb.image = nil
   let id = assetID
-  storage.image = nil; storage.toolTip = "检查本地状态"; storageAsset = asset
+  storage.image = nil; storage.toolTip = L("检查本地状态"); storageAsset = asset
   let localOptions = PHContentEditingInputRequestOptions(); localOptions.isNetworkAccessAllowed = false
   storageRequest = asset.requestContentEditingInput(with: localOptions) { [weak self] input, info in
+   let cloud = (info[PHContentEditingInputResultIsInCloudKey] as? NSNumber)?.boolValue == true
    let text: String
-   if input?.fullSizeImageURL != nil { text = "本地全尺寸图像可用" }
-   else if (info[PHContentEditingInputResultIsInCloudKey] as? NSNumber)?.boolValue == true { text = "iCloud · 需下载全尺寸图像" }
-   else { text = "本地状态未知" }
-   DispatchQueue.main.async { guard let self, self.assetID == id else { return }; self.storage.image = text.hasPrefix("iCloud") ? NSImage(systemSymbolName: "icloud", accessibilityDescription: "iCloud") : nil; self.storage.toolTip = text }
+   if input?.fullSizeImageURL != nil { text = L("本地全尺寸图像可用") }
+   else if cloud { text = L("iCloud · 需下载全尺寸图像") }
+   else { text = L("本地状态未知") }
+   DispatchQueue.main.async { guard let self, self.assetID == id else { return }; self.storage.image = cloud ? NSImage(systemSymbolName: "icloud", accessibilityDescription: "iCloud") : nil; self.storage.toolTip = text }
   }
   let options = PHImageRequestOptions(); options.isNetworkAccessAllowed = false; options.deliveryMode = .fastFormat; options.resizeMode = .fast
   request = PHImageManager.default().requestImage(for: asset, targetSize: CGSize(width: 128, height: 96), contentMode: .aspectFit, options: options) { [weak self] image, _ in
